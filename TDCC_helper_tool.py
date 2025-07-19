@@ -25,7 +25,7 @@ args = None
 os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--log-level=3"
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Launch Selenium Edge WebDriver")
+    parser = argparse.ArgumentParser(description="TDCC evote and screenshot automation tool")
 
     # Optional flag argument (True if used, False otherwise)
     parser.add_argument(
