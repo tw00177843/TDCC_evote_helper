@@ -36,6 +36,8 @@ This repository provides tools to assist shareholders with the TDCC electronic v
 ```
 pyinstaller -F ./TDCC_helper_tool.py
 pyinstaller -F ./rename_tool.py
+
+we introduce github workflow to build the executable files for the tools(commit 0c3b30577), so you can get the executable files directly from "Actions" tab in this repository.
 ```
 
 ---
@@ -172,7 +174,6 @@ If you encounter issues running this program, here's environment versions. The f
 - **PyInstaller:** 6.13.0
 - **pip:** 25.1.1
 - **selenium:** 4.32.0
-<!-- - **webdriver-manager:** 4.0.2 -->
 
 You can use `pip` to install the following dependencies.
 
@@ -189,6 +190,8 @@ python3 -m pip install -r requirements.txt
 ```
 pyinstaller -F ./TDCC_helper_tool.py
 pyinstaller -F ./rename_tool.py
+
+我們在 commit 0c3b30577 中引入了 GitHub 工作流程來建置工具的可執行檔，您可以直接從本專案的 "Actions" 標籤頁下載可執行檔。
 ```
 
 ---
@@ -324,7 +327,7 @@ pyinstaller -F ./rename_tool.py
 - **PyInstaller:** 6.13.0
 - **pip:** 25.1.1
 - **selenium:** 4.32.0
-<!-- - **webdriver-manager:** 4.0.2 -->
+- 
 你可以使用`pip`安裝這些依賴項：
 ```shell
 python3 -m pip install -r requirements.txt

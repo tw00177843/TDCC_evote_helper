@@ -2,12 +2,14 @@
 # coding: utf-8
 # author: DavidChou
 # repository: https://github.com/DavidChou23/TDCC_evote_helper
-# date: 2025/5/9
+# date: 2025/7/19
 
 debug=0
 from selenium import webdriver
-# from selenium.webdriver.edge.service import Service
-# from webdriver_manager.microsoft import EdgeChromiumDriverManager
+# from selenium.webdriver.edge.service import Service --> import later, in case
+# from selenium.webdriver.chrome.service import Service
+# from selenium.webdriver.firefox.service import Service
+import subprocess
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.action_chains import ActionChains
@@ -15,17 +17,138 @@ import time
 import datetime
 import os
 import sys
-import json
+import argparse
 import threading
 import random
 no_confirm= False
+args = None
 os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--log-level=3"
 
-if __name__ == "__main__":
-    if len(sys.argv)==2 and (sys.argv[1]=="-y" or sys.argv[1] =="--yes" ): # for schedule task, use exist config file
-        no_confirm= True
+def parse_args():
+    parser = argparse.ArgumentParser(description="Launch Selenium Edge WebDriver")
 
-#cd to the directory of the script
+    # Optional flag argument (True if used, False otherwise)
+    parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="enabled no confirm mode? Will use exist config file(y/n)"
+    )
+
+    # Optional argument with value
+    parser.add_argument(
+        "-d",
+        "--driver_path",
+        metavar="driver_path",
+        type=str,
+        help="Path to a custom Driver executable file"
+    )
+    # Optional browser flags, none or one of [Edge, Chrome, Firefox]
+     
+    parser.add_argument(
+        "-b",
+        "--browser",
+        metavar="browser",
+        type=str,
+        choices=["Edge", "Chrome", "Firefox"],
+        help="Specify the browser to use [Edge, Chrome, Firefox]"
+    )
+    args = parser.parse_args()
+    # args.yes = True
+    # args.browser = "Firefox"  # default browser
+    return args
+
+def open_browser():
+    global args
+    # launch a webdriver
+    browser = None
+    try:
+        # check if the driver path exists and executable
+        if args.driver_path:  # if user provided a custom driver path
+            if os.path.exists(args.driver_path) and os.access(args.driver_path, os.X_OK):
+                # determine which browser driver to use by subprocess driver --help
+                result = subprocess.run([args.driver_path, '--help'], capture_output=True, text=True)
+                if result.returncode == 0:
+                    if 'Chrome' in result.stdout:
+                        print("Using Chrome driver")
+                        from selenium.webdriver.chrome.service import Service
+                        service = Service(args.driver_path)
+                        browser = webdriver.Chrome(service=service)
+                    elif 'msedge' in result.stdout:
+                        print("Using Edge driver")
+                        from selenium.webdriver.edge.service import Service
+                        service = Service(args.driver_path)
+                        browser = webdriver.Edge(service=service)
+                    elif 'Firefox' in result.stdout:
+                        print("Using Firefox driver")
+                        from selenium.webdriver.firefox.service import Service
+                        service = Service(args.driver_path)
+                        browser = webdriver.Firefox(service=service)
+                    else:
+                        print("Unknown browser driver")
+                        raise FileNotFoundError("Unknown browser driver")
+                else:
+                    print("Failed to determine browser driver")
+                    raise FileNotFoundError("Failed to determine browser driver")
+                
+                print(f"Using custom driver path: {args.driver_path}")
+
+            else:
+                #print to stdout
+                print(f"Custom driver path {args.driver_path} does not exist or is not executable. Falling back to open browser as normal.")
+                #print to stderr
+                print("Custom driver path does not exist or is not executable. Falling back to default driver path.", file=sys.stderr)
+                raise FileNotFoundError(f"Custom driver path {args.driver_path} does not exist or is not executable.")
+        else: # user did not provide a custom driver path
+            # if user provided a browser flag
+            if args.browser == "Edge":
+                print("Using Edge WebDriver")
+                browser = webdriver.Edge()
+            elif args.browser == "Chrome":
+                print("Using Chrome WebDriver")
+                browser = webdriver.Chrome()
+            elif args.browser == "Firefox":
+                print("Using Firefox WebDriver")
+                browser = webdriver.Firefox()
+            else: # no browser flag provided
+                raise FileNotFoundError("No custom driver path provided and no browser flag provided. Falling back to default.")
+        
+    except Exception as e:
+        # let webdriver auto download and maintain the driver
+        try:
+            # Edge
+            print("Trying to initialize Edge WebDriver...")
+            browser = webdriver.Edge()
+        except Exception as e:
+            print(f"Failed to initialize Edge WebDriver: {e}")
+            try:
+                # Chrome
+                print("Trying to initialize Chrome WebDriver...")
+                browser = webdriver.Chrome()
+            except Exception as e:
+                print(f"Failed to initialize Chrome WebDriver: {e}")
+                try:
+                    # Firefox
+                    print("Trying to initialize Firefox WebDriver...")
+                    browser = webdriver.Firefox()
+                except Exception as e:
+                    print(f"Failed to initialize Firefox WebDriver: {e}")
+                    sys.exit(1)
+    if browser is None:
+        raise AssertionError("Browser initialization failed, please check your driver path or browser flag.")
+    print("WebDriver initialized successfully.")
+    return browser
+
+if __name__ == "__main__":
+    args = parse_args()
+    if args.yes:  # for schedule task, use exist config file
+        no_confirm = True
+        print("no confirm mode enabled, will use exist config file")
+    else:
+        no_confirm = False
+        print("no confirm mode disabled, will ask for config file")
+
+# cd to the directory of the script
 def get_executable_dir():
     if getattr(sys, 'frozen', False):
         return os.path.dirname(sys.executable)  # For PyInstaller
@@ -40,7 +163,7 @@ print("current working directory: ", os.getcwd())
 
 # WARNING
 print("###############  Stock Vote TDCC helper tool   ############")
-print("version: 2025.5.9")
+print("version: 2025.7.19")
 print("author: DavidChou")
 print("repository: https://github.com/DavidChou23/TDCC_evote_helper")
 print("This script is only for assisting shareholders to complete the voting process in advance")
@@ -60,7 +183,7 @@ with open('./statement.html', 'w', encoding='utf-8') as f:
 </head>
 <body>
     <h1>TDCC e-vote helper tool</h1>
-    <p>Version: 2025.5.9</p>
+    <p>Version: 2025.7.19</p>
     <p>Author: DavidChou</p>
     <p>Repository: <a href="https://github.com/DavidChou23/TDCC_evote_helper">https://github.com/DavidChou23/TDCC_evote_helper</a> </p>
     <p>This script is only for assisting shareholders to complete the voting process in advance</p>
@@ -1118,10 +1241,6 @@ def choose_screenshot_mode():
         print("Please enter 1 or 2 or 3.")
 
 ###############################################    START    ######################################################
-#pyinstaller -D .\股東e票通輔助工具.py 打包成exe
-
-# service = Service(EdgeChromiumDriverManager().install())  # use webdriver_manager to install the driver
-#driver = webdriver.Edge(service=service) # use the installed driver
 driver=""
 shareholderIDs=[]
 time_speed=0
@@ -1203,8 +1322,9 @@ while(True):
             if id not in voteinfolist.keys():
                 voteinfolist[id]=[]
         
+        # driver = webdriver.Chrome() # selenium auto install
+        driver = open_browser()
         for user_id in shareholderIDs:
-            driver = webdriver.Chrome() # selenium auto install
             # open a test page (can be local or online HTML)
             driver.get("file:///" + os.path.abspath("./statement.html"))
             time.sleep(5)
@@ -1219,20 +1339,22 @@ while(True):
                     print(f"auto_screenshot failed for {voteinfolist[user_id][0]}")
             print("------ finished ------")
             logout()
-            driver.quit()
+        driver.quit()
     elif check=="2":
         screenshot_mode = choose_screenshot_mode()
+        # driver = webdriver.Chrome() # use the installed driver
+        driver = open_browser()
         while(True):
-            id=input("Please enter the ID number to take screenshots:(-1 to exit) ")
+            id=input("Please enter the user ID number to take screenshots:(-1 to exit) ")
             if id == "-1":
                 print("exit")
+                driver.quit()
                 input("press Enter to continue")
                 sys.exit()
             if(id_check(id) != 0):
                 print("ID number is not valid")
                 continue
                 
-            driver = webdriver.Chrome() # use the installed driver
             while(True):
                 try:
                     autoLogin(id)
@@ -1271,4 +1393,3 @@ while(True):
                     print("error: ",e)
                     continue
             logout()
-            driver.quit()
