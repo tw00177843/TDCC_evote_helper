@@ -11,12 +11,16 @@ on:
 jobs:
   build:
     strategy:
+      # 防止其中一個版本失敗導致其他正常的版本被強制中斷
+      fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest]
         python: [3.13.x]
 
     runs-on: ${{ matrix.os }}
-
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      
     steps:
     - uses: actions/checkout@v4
 
