@@ -205,9 +205,9 @@ print("current working directory: ", os.getcwd())
 
 # WARNING
 print("###############  Stock Vote TDCC helper tool   ############")
-print("version: 2025.7.19")
-print("author: DavidChou")
-print("repository: https://github.com/DavidChou23/TDCC_evote_helper")
+print("version: 2026.05.25")
+print("author: DavidLee")
+print("repository: https://github.com/tw00177843/TDCC_evote_helper")
 print("This script is only for assisting shareholders to complete the voting process in advance")
 print("Voting content can be modified at any time without affecting the shareholder's intention")
 print("This script is not responsible for any consequences caused by the use of this script")
@@ -225,9 +225,9 @@ with open('./statement.html', 'w', encoding='utf-8') as f:
 </head>
 <body>
     <h1>TDCC e-vote helper tool</h1>
-    <p>Version: 2025.7.19</p>
-    <p>Author: DavidChou</p>
-    <p>Repository: <a href="https://github.com/DavidChou23/TDCC_evote_helper">https://github.com/DavidChou23/TDCC_evote_helper</a> </p>
+    <p>Version: 2026.05.25</p>
+    <p>Author: DavidLee</p>
+    <p>Repository: <a href="https://github.com/tw00177843/TDCC_evote_helper">https://github.com/tw00177843/TDCC_evote_helper</a> </p>
     <p>This script is only for assisting shareholders to complete the voting process in advance</p>
     <p>Voting content can be modified at any time without affecting the shareholder's intention</p>
     <p>This script is not responsible for any consequences caused by the use of this script</p>
@@ -733,16 +733,44 @@ def screenshot(user_id,info):
     global base_path, screenshot_mode
     try:
         driver.execute_script("document.body.style.zoom = '120%'")
-        # adjust the window size
+# === 核心修正：相容傳統明細與新型 e-Gift 畫面的等待與視窗調整機制 ===
+        start_wait_time = time.time()
+        is_egift_page = False  # 標記是否為 e-Gift 頁面
+        
         while(True):
             try:
-                driver.find_element(By.CSS_SELECTOR,'div[class="u-width--100 u-t_align--right"]')
-                break
+                # 檢查點 1：嘗試尋找傳統的投票明細區塊
+                if driver.find_elements(By.CSS_SELECTOR, 'div[class="u-width--100 u-t_align--right"]'):
+                    break
+                    
+                # 檢查點 2：判定是否為今年新推出的 e-Gift 電子票券網頁版面
+                body_text = driver.find_element(By.TAG_NAME, 'body').text
+                if "e-Gift" in body_text or "電子票券" in body_text or "減碳" in body_text:
+                    print(f"【新型頁面】偵測到股票 {info[0]} 為 e-Gift 電子票券版面，跳出等待直接準備截圖。")
+                    is_egift_page = True
+                    break
             except:
-                time.sleep(1)
-                continue
-        votedate_pic = driver.find_element(By.CSS_SELECTOR,'div[class="u-width--100 u-t_align--right"]')
-        driver.set_window_size(516, votedate_pic.location['y']+votedate_pic.size['height']+370)
+                pass
+                
+            # 防呆機制：如果超過 5 秒都沒抓到，強行跳出以免卡死
+            if time.time() - start_wait_time > 5:
+                print(f"【提示】載入超時，強行進行截圖。")
+                break
+                
+            time.sleep(0.5)
+            continue
+
+        # 根據不同的頁面類型，給予最適合的視窗寬高進行截圖
+        if is_egift_page:
+            # e-Gift 頁面直接設定能看見完整票券、條碼及說明的安全長度（例如 950 像素）
+            driver.set_window_size(516, 950)
+        else:
+            # 傳統頁面維持原本動態計算高度的邏輯
+            try:
+                votedate_pic = driver.find_element(By.CSS_SELECTOR, 'div[class="u-width--100 u-t_align--right"]')
+                driver.set_window_size(516, votedate_pic.location['y'] + votedate_pic.size['height'] + 370)
+            except:
+                driver.set_window_size(516, 850)
         # scroll to the top of the page
         for _ in range(5):
             js="var q=document.documentElement.scrollTop=0"
