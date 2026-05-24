@@ -179,7 +179,7 @@ def open_browser():
     if browser is None:
         raise AssertionError("Browser initialization failed, please check your driver path or browser flag.")
     print("WebDriver initialized successfully.")
-return browser
+    return browser
     
 if __name__ == "__main__":
     args = parse_args()
