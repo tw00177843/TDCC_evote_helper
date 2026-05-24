@@ -73,12 +73,26 @@ def open_browser():
                         print("Using Chrome driver")
                         from selenium.webdriver.chrome.service import Service
                         service = Service(args.driver_path)
-                        browser = webdriver.Chrome(service=service)
+                        
+                        # --- 注入 Chrome 自動允許憑證設定 ---
+                        options = webdriver.ChromeOptions()
+                        prefs = {"ssl.client_certs.auto_select_for_urls": ["https://*"]}
+                        options.add_experimental_option("prefs", prefs)
+                        browser = webdriver.Chrome(service=service, options=options)
+                        # ----------------------------------
+                        
                     elif 'msedge' in result.stdout:
                         print("Using Edge driver")
                         from selenium.webdriver.edge.service import Service
                         service = Service(args.driver_path)
-                        browser = webdriver.Edge(service=service)
+                        
+                        # --- 注入 Edge 自動允許憑證設定 ---
+                        options = webdriver.EdgeOptions()
+                        prefs = {"ssl.client_certs.auto_select_for_urls": ["https://*"]}
+                        options.add_experimental_option("prefs", prefs)
+                        browser = webdriver.Edge(service=service, options=options)
+                        # ----------------------------------
+                        
                     elif 'Firefox' in result.stdout:
                         print("Using Firefox driver")
                         from selenium.webdriver.firefox.service import Service
@@ -103,10 +117,24 @@ def open_browser():
             # if user provided a browser flag
             if args.browser == "Edge":
                 print("Using Edge WebDriver")
-                browser = webdriver.Edge()
+                
+                # --- 注入 Edge 自動允許憑證設定 ---
+                options = webdriver.EdgeOptions()
+                prefs = {"ssl.client_certs.auto_select_for_urls": ["https://*"]}
+                options.add_experimental_option("prefs", prefs)
+                browser = webdriver.Edge(options=options)
+                # ----------------------------------
+                
             elif args.browser == "Chrome":
                 print("Using Chrome WebDriver")
-                browser = webdriver.Chrome()
+                
+                # --- 注入 Chrome 自動允許憑證設定 ---
+                options = webdriver.ChromeOptions()
+                prefs = {"ssl.client_certs.auto_select_for_urls": ["https://*"]}
+                options.add_experimental_option("prefs", prefs)
+                browser = webdriver.Chrome(options=options)
+                # ----------------------------------
+                
             elif args.browser == "Firefox":
                 print("Using Firefox WebDriver")
                 browser = webdriver.Firefox()
@@ -118,13 +146,27 @@ def open_browser():
         try:
             # Edge
             print("Trying to initialize Edge WebDriver...")
-            browser = webdriver.Edge()
+            
+            # --- 注入 Edge 自動允許憑證設定 (預備救援機制) ---
+            options = webdriver.EdgeOptions()
+            prefs = {"ssl.client_certs.auto_select_for_urls": ["https://*"]}
+            options.add_experimental_option("prefs", prefs)
+            browser = webdriver.Edge(options=options)
+            # -----------------------------------------------
+            
         except Exception as e:
             print(f"Failed to initialize Edge WebDriver: {e}")
             try:
                 # Chrome
                 print("Trying to initialize Chrome WebDriver...")
-                browser = webdriver.Chrome()
+                
+                # --- 注入 Chrome 自動允許憑證設定 (預備救援機制) ---
+                options = webdriver.ChromeOptions()
+                prefs = {"ssl.client_certs.auto_select_for_urls": ["https://*"]}
+                options.add_experimental_option("prefs", prefs)
+                browser = webdriver.Chrome(options=options)
+                # -----------------------------------------------
+                
             except Exception as e:
                 print(f"Failed to initialize Chrome WebDriver: {e}")
                 try:
@@ -137,8 +179,8 @@ def open_browser():
     if browser is None:
         raise AssertionError("Browser initialization failed, please check your driver path or browser flag.")
     print("WebDriver initialized successfully.")
-    return browser
-
+return browser
+    
 if __name__ == "__main__":
     args = parse_args()
     if args.yes:  # for schedule task, use exist config file
