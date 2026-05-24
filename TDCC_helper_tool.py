@@ -178,6 +178,13 @@ def open_browser():
                     sys.exit(1)
     if browser is None:
         raise AssertionError("Browser initialization failed, please check your driver path or browser flag.")
+    # === 注入 CDP 指令動態抹除 navigator.webdriver 機器人特徵 (適用 Chrome/Edge) ===
+    try:
+        browser.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+            "source": "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+        })
+    except Exception:
+        pass
     print("WebDriver initialized successfully.")
     return browser
     
